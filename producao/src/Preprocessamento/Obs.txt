@@ -1,0 +1,8 @@
+Observações Gerais sobre o preprocessamento.
+
+
+1 - São removidos palavras que contenham @;
+2 - São removidos números;
+3 - Palavras em maiúscula não são alteradas (não sofrem nenhum tipo de preprocessamento);
+4 - Palvras não são substituidas por sinonimos;
+5 - Não é aplicado stemming;
