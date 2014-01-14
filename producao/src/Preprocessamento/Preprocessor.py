@@ -50,7 +50,7 @@ class Preprocessor:
         self.histogram[word] += 1
         newLine += newWord + " "
      
-    self.inputContent[i] = newLine.strip()
+      self.inputContent[i] = newLine.strip()
   
   def generate_histogram(self, PRECISION):
     self.sorted_histogram = sorted(self.histogram.iteritems(), 
@@ -95,12 +95,15 @@ class Preprocessor:
 
     fout = open(self.outPath + "/validWords.txt",'w')
     contador = 0;
+    
+    entrada = open(self.outPath + '/histogram.txt', 'r')
+
     for line in entrada:
       contador += 1
       if( contador <= self.breakPoint ):
         continue
 
-      word, value = line.split('\t')
+      word, value = line.strip().split()
 
       if len(r.findall(word)) != 0 or value <= 3 \
         or word in stopWords:
@@ -109,15 +112,16 @@ class Preprocessor:
       print >> fout, line.strip()
     fout.close()
 
-    fout = open(self.outPath + "/cleanedDB.txt")
+    fout = open(self.outPath + "/cleanedDB.txt", 'w')
+    
     for line in self.inputContent:
-      line = self.inputContent[i].rstrip('\n').split('\t')
+      line = line.strip('\n').split('\t')
       newLine = "\t".join( line[:self.columnStart] ) + "\t"
 
       text = " ".join(line[self.columnStart:]).strip()
       for word in text.split():
         if( word not in stopWords ):
-          newLine.append( word + " " )
+          newLine = newLine + word + " "
       print >> fout, newLine.strip()
     fout.close()
 
@@ -130,7 +134,7 @@ class Preprocessor:
 
 if __name__ == '__main__':
   if( len(sys.argv) != 6 ):
-    print argv[0], " <inputFile> <outputPath> <textColumnStart> <minWordLen> <language>"
+    print sys.argv[0], " <inputFile> <outputPath> <textColumnStart> <minWordLen> <language>"
     sys.exit(1)
 
   pre = Preprocessor(sys.argv[1],sys.argv[2],int(sys.argv[3]))
