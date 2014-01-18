@@ -1,0 +1,174 @@
+function agrupaTopicos(dampFactor, epsilon, numHops, restartProbability, inputFile, outputDir)
+
+%inicia contagem de tempo de carregamento e pre-processamento dos dados
+tic;
+
+  [irreducibleMatrix, numTopics] = loadTransitionMatrix(dampFactor, inputFile);
+
+%finaliza tempo de pre-processamento dos dados
+preProcessingTime=toc;
+
+%inicia contagem de tempo do agrupamento
+tic;
+
+  %recupera o primeiro autovetor da matriz irredutível
+  numEigenVec = 1;
+%  opts.tol = epsilon; 
+  sigma = 'lm';
+  [stationaryProbabilities,eigenvalue] = eigs(irreducibleMatrix,numEigenVec,sigma);
+  stationaryProbabilities = abs(stationaryProbabilities);
+
+  %gera probabilidades de alcançar topicos em numHops iterações do randomWalk
+  randomWalkMatrix = irreducibleMatrix;
+  for i= 1:(numHops-1),
+    randomWalkMatrix = randomWalkMatrix * irreducibleMatrix;
+  end;
+
+  % calcula probabilidade minima necessaria para a juncao de dois topicos distintos: 
+  % tal valor é definido como o valor que um pulo randômico teria na base analisada
+  [meanNumberOfLinks] = getNumLinks(numTopics, irreducibleMatrix);
+  minProbability = restartProbability * 1/(meanNumberOfLinks)
+
+  %itera enquanto o numero de topicos resultantes for maior que 1
+  while (numTopics > 1) 
+
+      %identifica proximo par de topicos a serem aglutinados
+      [selectedRow, selectedColumn, maxProbability] = selectBestTopicPair(numTopics, randomWalkMatrix)
+
+      %verifica se maxProbability é maior que limiar minimo estabelecido para o dominio
+      if [maxProbability <= minProbability]
+	    break;
+      end;
+
+      newMatrix = zeros(numTopics -1, numTopics -1);
+      
+      %atualiza probabilidades de transições entre tópicos restantes
+      lastRowIndex = -1;
+      validRowIndex = 0;
+      selectedRowIndex = -1;
+      for i= 1:numTopics,
+
+	    if [ (i ~= selectedRow) && (i ~= selectedColumn) ]
+		if [ lastRowIndex == -1 ]
+			validRowIndex = validRowIndex + 1;
+		else
+			validRowIndex = lastRowIndex + 1;
+		end
+		lastRowIndex = -1;
+	    else
+		if [ selectedRowIndex == -1]
+			validRowIndex = validRowIndex + 1;
+			selectedRowIndex = validRowIndex;
+		else
+			lastRowIndex = validRowIndex;
+			validRowIndex = selectedRowIndex;
+		end
+	    end
+	
+	    if [ validRowIndex > 0] 
+	    
+		lastColumnIndex = -1;
+		validColumnIndex = 0;
+		selectedColumnIndex = -1;
+		for j= i:numTopics,
+		
+		      if [ (j ~= selectedRow) && (j ~= selectedColumn) ]
+			  if [ lastColumnIndex == -1 ]
+				  validColumnIndex = validColumnIndex + 1;
+			  else
+				  validColumnIndex = lastColumnIndex + 1;
+			  end
+			  lastColumnIndex = -1;
+		      else
+			  if [ selectedColumnIndex == -1 ]
+				  validColumnIndex = validColumnIndex + 1;
+				  selectedColumnIndex = validColumnIndex;
+			  else
+				  lastColumnIndex = validColumnIndex;
+				  validColumnIndex = selectedColumnIndex;
+			  end
+		      end
+
+		      if [validColumnIndex > 0]
+			  if [ (i == selectedRow) || (i == selectedColumn) ]
+			      if [ (j == selectedRow) || (j == selectedColumn) ] 
+				    if [ j ~= i] 
+					newMatrix(validRowIndex,validRowIndex) = newMatrix(validRowIndex,validRowIndex) + ((irreducibleMatrix(i,i) + irreducibleMatrix(i,j)) * stationaryProbabilities(i)/(stationaryProbabilities(i) + stationaryProbabilities(j)));
+				    end
+			      else
+				    newMatrix(validRowIndex,validColumnIndex) = newMatrix(validRowIndex,validColumnIndex) + (irreducibleMatrix(i,j) * stationaryProbabilities(i)/(stationaryProbabilities(selectedRow) + stationaryProbabilities(selectedColumn)));
+				    newMatrix(validColumnIndex,validRowIndex) = newMatrix(validColumnIndex,validRowIndex) + irreducibleMatrix(j,i);
+			      end
+			  else
+			      if [ (j == selectedRow) || (j == selectedColumn) ]
+				  newMatrix(validRowIndex,validColumnIndex) = newMatrix(validRowIndex,validColumnIndex) + irreducibleMatrix(i,j);
+				  newMatrix(validColumnIndex,validRowIndex) = newMatrix(validColumnIndex,validRowIndex) + (irreducibleMatrix(j,i) * stationaryProbabilities(j)/(stationaryProbabilities(selectedRow) + stationaryProbabilities(selectedColumn)));
+			      else
+				  newMatrix(validRowIndex,validColumnIndex) = irreducibleMatrix(i,j);
+				  newMatrix(validColumnIndex,validRowIndex) = irreducibleMatrix(j,i);
+			      
+			      end
+			      
+			  end
+			  
+		    end;
+		end;
+	   end;
+      end;
+      
+      %atualiza numero de topicos da matriz
+      numTopics = numTopics - 1;
+
+      %atualiza matriz de topicos
+      irreducibleMatrix = newMatrix
+break;
+      %gera probabilidades de alcançar topicos em numHops iterações do randomWalk
+      randomWalkMatrix = irreducibleMatrix;
+      for i= 1:(numHops-1),
+	randomWalkMatrix = randomWalkMatrix * irreducibleMatrix;
+      end;
+      
+  end;    
+
+%finaliza contagem de tempo
+processingTime=toc;
+
+% abre arquivo de saida
+outputFile = strcat(outputDir,'clusteringTimes.txt');
+outputFile = fopen(outputFile, 'w');
+
+%escreve pagerank em arquivo de saida
+fprintf(outputFile,'%g\t%g\n', preProcessingTime, processingTime);
+
+%fecha arquivo
+fclose(outputFile);
+
+memoryInfo = whos;
+
+% abre arquivo de saida
+outputFile = strcat(outputDir,'clusteringMemoryInfo.txt');
+outputFile = fopen(outputFile, 'w');
+
+%escreve pagerank em arquivo de saida
+for i= 1:length(memoryInfo),
+     fprintf(outputFile,'%s\t%u\n', getfield(memoryInfo(i), 'name'), getfield(memoryInfo(i), 'bytes'));
+end;
+
+%fecha arquivo
+fclose(outputFile);
+
+% abre arquivo de saida
+outputFile = strcat(outputDir,'clusteringResult.txt');
+outputFile = fopen(outputFile, 'w');
+
+%escreve pagerank em arquivo de saida
+for i= 1:numTopics,
+    for j= 1:numTopics,
+	fprintf(outputFile,'%g %g %g\n', i, j, irreducibleMatrix(i,j));
+    end;
+end;
+
+%fecha arquivo
+fclose(outputFile);
+
+
