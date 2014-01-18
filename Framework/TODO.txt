@@ -1,0 +1,45 @@
+- Verificar depois quão boa é a regressão usando distribuição gamma
+- Verificar nivel de espársidade adequada para o NNMF
+- Avaliar parametros/premissas do algoritmo de aglutinacao
+- Justificativa para considerar apenas componentes principais maiores que 1:
+  Principal component analysis is used to study large data sets, such as those encountered in data mining, chemical research, psychology, and in marketing. PCA is popular especially in psychology, in the field of psychometrics. In Q-methodology, the eigenvalues of the correlation matrix determine the Q-methodologist's judgment of practical significance (which differs from the statistical significance of hypothesis testing): The factors with eigenvalues greater than 1.00 are considered practically significant, that is, as explaining an important amount of the variability in the data, while eigenvalues less than 1.00 are considered practically insignificant, as explaining only a negligible portion of the data variability. More generally, principal component analysis can be used as a method of factor analysis in structural equation modeling.
+
+- verificar entradas/saidas do framework
+  ok	
+- verificar defines
+  ok
+- gerar datasets para teste
+- framework de avaliação
+
+
+python framework.py -i entrada/formated2_acmDB.txt -o acmDB10 -a n -t NNMF -r 0.7
+
+status 0
+  entradas e configurações prontas e aguardando processamento
+
+status 1
+  pre-processamento finalizado e dados resultantes estao ok
+
+status 2
+  fatores latentes primarios identificados 
+
+status 3
+  clusterizacao realizada
+
+status 4
+  processo finalizado
+
+
+  
+  start_time	end_time	status	saida
+
+
+eleições:
+  hydra2:/scratch1/fhmourao/electionDB.tar.bz2 
+      userId \t data \t time \t entity \t tweet
+
+fiat:
+  mongo 192.168.63.252
+
+Louis Vuitton ou RayBan:
+  esperando resposta do Paulo
