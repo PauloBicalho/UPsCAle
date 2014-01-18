@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import sys
 import operator
 import Dictionary
@@ -80,7 +82,10 @@ class Preprocessor:
       if( abs(second_derivative[rank]) >= PRECISION ):
         break
 
-    self.breakPoint = rank
+    if( rank < 100 ):
+      self.breakPoint = rank
+    else:
+      self.breakPoint = 100
 
   def remove_stopwords(self, LANGUAGE):
     stopWords = set()
@@ -99,13 +104,16 @@ class Preprocessor:
     entrada = open(self.outPath + '/histogram.txt', 'r')
 
     for line in entrada:
+      word, value = line.strip().split()
+      value = int(value)
+      
       contador += 1
       if( contador <= self.breakPoint ):
+        stopWords.add( word.strip().lower() )
         continue
 
-      word, value = line.strip().split()
 
-      if len(r.findall(word)) != 0 or value <= 3 \
+      if len(r.findall(word)) != 0 or value <= 0 \
         or word in stopWords:
           continue
 

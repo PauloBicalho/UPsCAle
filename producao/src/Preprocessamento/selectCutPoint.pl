@@ -28,7 +28,7 @@ $numTerms = 0;
 while( defined($line = <FIN>) ){
     chomp($line);
 
-    ($term,$frequency) = split(/\t/,$line);
+    ($term,$frequency) = split(/ /,$line);
     $sigma[$numTerms++] = $frequency;
 }
 $k = $numTerms;
